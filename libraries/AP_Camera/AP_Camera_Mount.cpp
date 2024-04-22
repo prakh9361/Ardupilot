@@ -87,7 +87,16 @@ void AP_Camera_Mount::send_camera_information(mavlink_channel_t chan) const
 {
     AP_Mount* mount = AP::mount();
     if (mount != nullptr) {
-        return mount->send_camera_information(get_mount_instance(), chan);
+        bool sent_by_mount = mount->send_camera_information(get_mount_instance(), chan);
+#if AP_CAMERA_JSON_INFO_ENABLED
+        // If the mount didn't send the message, and we've potentially got
+        // JSON data, try to send that instead.
+        if (!sent_by_mount) {
+            AP_Camera_Backend::send_camera_information(chan);
+        }
+#else
+        (void)sent_by_mount;
+#endif // AP_CAMERA_JSON_INFO_ENABLED
     }
 }
 
@@ -114,7 +123,16 @@ void AP_Camera_Mount::send_video_stream_information(mavlink_channel_t chan) cons
 {
     AP_Mount* mount = AP::mount();
     if (mount != nullptr) {
-        return mount->send_video_stream_information(get_mount_instance(), chan);
+         bool sent_by_mount = mount->send_video_stream_information(get_mount_instance(), chan);
+#if AP_CAMERA_JSON_INFO_ENABLED
+        // If the mount didn't send the message, and we've potentially got
+        // JSON data, try to send that instead.
+        if (!sent_by_mount) {
+            AP_Camera_Backend::send_video_stream_information(chan);
+        }
+#else
+        (void)sent_by_mount;
+#endif // AP_CAMERA_JSON_INFO_ENABLED
     }
 }
 
