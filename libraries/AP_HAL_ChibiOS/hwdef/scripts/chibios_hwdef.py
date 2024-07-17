@@ -1899,12 +1899,12 @@ INCLUDE common.ld
 
             if dev.startswith('OTG2'):
                 f.write(
-                    '#define HAL_%s_CONFIG {(BaseSequentialStream*) &SDU2, 2, true, false, 0, 0, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, UINT8_MAX}\n' % dev)  # noqa
+                    '#define HAL_%s_CONFIG {(BaseSequentialStream*) &SDU2, 2, true, false, 0, 0, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, UINT8_MAX, false}\n' % dev)  # noqa
                 OTG2_index = serial_list.index(dev)
                 self.dual_USB_enabled = True
             elif dev.startswith('OTG'):
                 f.write(
-                    '#define HAL_%s_CONFIG {(BaseSequentialStream*) &SDU1, 1, true, false, 0, 0, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, UINT8_MAX}\n' % dev)  # noqa
+                    '#define HAL_%s_CONFIG {(BaseSequentialStream*) &SDU1, 1, true, false, 0, 0, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, UINT8_MAX, false}\n' % dev)  # noqa
             else:
                 need_uart_driver = True
                 f.write(
@@ -1943,8 +1943,11 @@ INCLUDE common.ld
                             if s not in lib.AltFunction_map:
                                 return "UINT8_MAX"
                             return lib.AltFunction_map[s]
-
-                f.write("%s}\n" % get_RTS_alt_function())
+                low_noise = 'false'
+                rx_port = dev + '_RX'
+                if rx_port in self.bylabel and self.bylabel[rx_port].has_extra('LOW_NOISE'):
+                    low_noise = 'true'
+                f.write("%s, %s}\n" % (get_RTS_alt_function(), low_noise))
 
         if have_rts_cts:
             f.write('#define AP_FEATURE_RTSCTS 1\n')
