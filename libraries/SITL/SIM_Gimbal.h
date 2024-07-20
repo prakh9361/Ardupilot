@@ -14,6 +14,11 @@
  */
 /*
   gimbal simulator class
+
+./Tools/autotest/sim_vehicle.py -D -G -v ArduCopter --mavlink-gimbal
+param set MNT1_TYPE 2
+param set RC6_OPTION 213  # MOUNT1_PITCH
+rc 6 1818  # for neutral pitch input
 */
 
 #pragma once
@@ -112,6 +117,9 @@ private:
 
     uint32_t param_send_last_ms;
     uint8_t param_send_idx;
+
+    // component ID we send from:
+    const uint8_t gimbal_component_id = 154;  // MAV_COMP_ID_GIMBAL
 
     void send_report(void);
     void param_send(const struct gimbal_param *p);
