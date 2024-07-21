@@ -653,11 +653,11 @@ void AC_AutoTune_Multi::twitching_test_angle(float angle, float rate, float angl
 }
 
 // twitching_measure_acceleration - measure rate of change of measurement
-void AC_AutoTune_Multi::twitching_measure_acceleration(float &rate_of_change, float rate_measurement, float &rate_measurement_max) const
+void AC_AutoTune_Multi::twitching_measure_acceleration(float &accel_average, float rate, float rate_max) const
 {
-    if (rate_measurement_max < rate_measurement) {
-        rate_measurement_max = rate_measurement;
-        rate_of_change = (1000.0f*rate_measurement_max)/(AP_HAL::millis() - step_start_time_ms);
+    if (rate_max < rate) {
+        rate_max = rate;
+        accel_average = (1000.0 * rate_max) / (AP_HAL::millis() - step_start_time_ms);
     }
 }
 
@@ -1189,6 +1189,7 @@ void AC_AutoTune_Multi::twitch_test_init()
     float target_max_rate;
     switch (axis) {
     case ROLL: {
+        angle_abort = target_angle_max_rp_cd();
         target_max_rate = MAX(AUTOTUNE_TARGET_MIN_RATE_RLLPIT_CDS, step_scaler * AUTOTUNE_TARGET_RATE_RLLPIT_CDS);
         target_rate = constrain_float(ToDeg(attitude_control->max_rate_step_bf_roll()) * 100.0, AUTOTUNE_TARGET_MIN_RATE_RLLPIT_CDS, target_max_rate);
         target_angle = constrain_float(ToDeg(attitude_control->max_angle_step_bf_roll()) * 100.0, target_angle_min_rp_cd(), target_angle_max_rp_cd());
@@ -1196,6 +1197,7 @@ void AC_AutoTune_Multi::twitch_test_init()
         break;
     }
     case PITCH: {
+        angle_abort = target_angle_max_rp_cd();
         target_max_rate = MAX(AUTOTUNE_TARGET_MIN_RATE_RLLPIT_CDS, step_scaler * AUTOTUNE_TARGET_RATE_RLLPIT_CDS);
         target_rate = constrain_float(ToDeg(attitude_control->max_rate_step_bf_pitch()) * 100.0, AUTOTUNE_TARGET_MIN_RATE_RLLPIT_CDS, target_max_rate);
         target_angle = constrain_float(ToDeg(attitude_control->max_angle_step_bf_pitch()) * 100.0, target_angle_min_rp_cd(), target_angle_max_rp_cd());
@@ -1204,6 +1206,7 @@ void AC_AutoTune_Multi::twitch_test_init()
     }
     case YAW:
     case YAW_D: {
+        angle_abort = target_angle_max_y_cd();
         target_max_rate = MAX(AUTOTUNE_TARGET_MIN_RATE_YAW_CDS, step_scaler*AUTOTUNE_TARGET_RATE_YAW_CDS);
         target_rate = constrain_float(ToDeg(attitude_control->max_rate_step_bf_yaw() * 0.75) * 100.0, AUTOTUNE_TARGET_MIN_RATE_YAW_CDS, target_max_rate);
         target_angle = constrain_float(ToDeg(attitude_control->max_angle_step_bf_yaw() * 0.75) * 100.0, target_angle_min_y_cd(), target_angle_max_y_cd());
@@ -1221,7 +1224,12 @@ void AC_AutoTune_Multi::twitch_test_init()
     } else {
         rotation_rate_filt.reset(0);
     }
-
+    twitch_first_iter = true;
+    test_rate_max = 0.0;
+    test_rate_min = 0.0;
+    test_angle_max = 0.0;
+    test_angle_min = 0.0;
+    rotation_rate_filt.reset(0.0);
 }
 
 //run twitch test
@@ -1312,18 +1320,18 @@ void AC_AutoTune_Multi::twitch_test_run(AxisType test_axis, const float dir_sign
     case RD_UP:
     case RD_DOWN:
         twitching_test_rate(lean_angle, rotation_rate, target_rate, test_rate_min, test_rate_max, test_angle_min);
-        twitching_measure_acceleration(test_accel_max, rotation_rate, rate_max);
-        twitching_abort_rate(lean_angle, rotation_rate, angle_finish, test_rate_min, test_angle_min);
+        twitching_measure_acceleration(test_accel_max, rotation_rate, test_rate_max);
+        twitching_abort_rate(lean_angle, rotation_rate, angle_abort, test_rate_min, test_angle_min);
         break;
     case RP_UP:
-        twitching_test_rate(lean_angle, rotation_rate, target_rate*(1+0.5f*aggressiveness), test_rate_min, test_rate_max, test_angle_min);
-        twitching_measure_acceleration(test_accel_max, rotation_rate, rate_max);
-        twitching_abort_rate(lean_angle, rotation_rate, angle_finish, test_rate_min, test_angle_min);
+        twitching_test_rate(lean_angle, rotation_rate, target_rate * (1 + 0.5 * aggressiveness), test_rate_min, test_rate_max, test_angle_min);
+        twitching_measure_acceleration(test_accel_max, rotation_rate, test_rate_max);
+        twitching_abort_rate(lean_angle, rotation_rate, angle_abort, test_rate_min, test_angle_min);
         break;
     case SP_DOWN:
     case SP_UP:
-        twitching_test_angle(lean_angle, rotation_rate, target_angle*(1+0.5f*aggressiveness), test_angle_min, test_angle_max, test_rate_min, test_rate_max);
-        twitching_measure_acceleration(test_accel_max, rotation_rate - dir_sign * start_rate, rate_max);
+        twitching_test_angle(lean_angle, rotation_rate, target_angle * (1 + 0.5 * aggressiveness), test_angle_min, test_angle_max, test_rate_min, test_rate_max);
+        twitching_measure_acceleration(test_accel_max, rotation_rate - dir_sign * start_rate, test_rate_max);
         break;
     case RFF_UP:
     case MAX_GAINS:
