@@ -174,6 +174,7 @@ class ap_library_check_headers(Task.Task):
         'libraries/AP_Scripting/lua_generated_bindings.h',
         'libraries/AP_NavEKF3/AP_NavEKF3_feature.h',
         'libraries/AP_LandingGear/AP_LandingGear_config.h',
+        'libraries/AP_Quicktune/AP_Quicktune.h',
     )
     whitelist = tuple(os.path.join(*p.split('/')) for p in whitelist)
 
