@@ -46,7 +46,7 @@ AP_Mount::AP_Mount()
     }
     _singleton = this;
 
-	AP_Param::setup_object_defaults(this, var_info);
+    AP_Param::setup_object_defaults(this, var_info);
 }
 
 // init - detect and initialise all mounts
@@ -63,8 +63,13 @@ void AP_Mount::init()
     // primary is reset to the first instantiated mount
     bool primary_set = false;
 
+#if HAL_MOUNT_STORM32SERIAL_ENABLED || \
+    HAL_MOUNT_SIYI_ENABLED || \
+    HAL_MOUNT_VIEWPRO_ENABLED || \
+    HAL_MOUNT_TOPOTEK_ENABLED
     // keep track of number of serial instances for initialisation
     uint8_t serial_instance = 0;
+#endif
 
     // create each instance
     for (uint8_t instance=0; instance<AP_MOUNT_MAX_INSTANCES; instance++) {
