@@ -263,13 +263,18 @@ public:
 #endif
 
     // send camera information message to GCS
-    void send_camera_information(uint8_t instance, mavlink_channel_t chan) const;
+    // returns true if the message was sent
+    bool send_camera_information(uint8_t instance, mavlink_channel_t chan) const;
 
     // send camera settings message to GCS
     void send_camera_settings(uint8_t instance, mavlink_channel_t chan) const;
 
     // send camera capture status message to GCS
     void send_camera_capture_status(uint8_t instance, mavlink_channel_t chan) const;
+
+    // send camera information message to GCS
+    // returns true if the message was sent
+    bool send_video_stream_information(uint8_t instance, mavlink_channel_t chan);
 
     //
     // rangefinder
